@@ -674,7 +674,12 @@ Device * Backend::makeDevice(
     cudaDeviceProp props;
     REQ_CUDA(cudaGetDeviceProperties(&props, (int)gpu_idx));
 
-    if (props.computeMode == cudaComputeModeProhibited) {
+    // cudaDeviceProp::computeMode was removed in CUDA 13; query the
+    // attribute instead, which works on both CUDA 12 and 13.
+    int compute_mode;
+    REQ_CUDA(cudaDeviceGetAttribute(
+        &compute_mode, cudaDevAttrComputeMode, (int)gpu_idx));
+    if (compute_mode == cudaComputeModeProhibited) {
         FATAL("%ld corresponds to a prohibited device\n", gpu_idx);
     }
 
