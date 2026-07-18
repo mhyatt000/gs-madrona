@@ -22,7 +22,14 @@ void CudaDynamicLoader::ensureLoaded() {
         fprintf(stderr, "Failed to load Nvidia CUDA driver library: %s\n", dlerror());
         std::abort();
     }
+    // Probe the toolkit major this library was built against FIRST: nvJitLink
+    // (linked at build time, CUDA_VERSION 12.x here) cannot ingest NVVM from a
+    // newer NVRTC, and torch-cu13 environments have libnvrtc.so.13 loaded.
+#if CUDART_VERSION >= 13000
     for (const char* name : std::array{"libnvrtc.so.13", "libnvrtc.so.12", "libnvrtc.so"}) {
+#else
+    for (const char* name : std::array{"libnvrtc.so.12", "libnvrtc.so.13", "libnvrtc.so"}) {
+#endif
         nvrtc_handle_ = dlopen(name, RTLD_LAZY | RTLD_LOCAL);
         if (nvrtc_handle_) {
             break;
