@@ -16,6 +16,16 @@
 
 #include <madrona/macros.hpp>
 
+// CUDA 13 headers #define cuMemAdvise to cuMemAdvise_v2, which takes a
+// CUmemLocation instead of an int device. The rename leaks into
+// LOAD_CUDA_SYM's stringification, making it dlsym the v2 entry point while
+// call sites still pass legacy arguments. Undo it: we load and call the
+// legacy symbol, which the driver always exports. (The other v2 renames in
+// cuda.h are signature-compatible with our declarations.)
+#ifdef cuMemAdvise
+#undef cuMemAdvise
+#endif
+
 namespace madrona {
 
 class CudaDynamicLoader {
